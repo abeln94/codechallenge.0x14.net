@@ -1,48 +1,69 @@
-import java.io.BufferedReader
 import java.io.File
 
 fun main() {
     // prepare output file
     File("output.txt").printWriter().use { out ->
-        var index = 1
+        var index = 0
         // prepare input file
-        File("input.txt").bufferedReader().use { inp ->
-            // each case
-            (1..inp.readLine().toInt()).forEach { n ->
-                // read data
-                val (p, r, c) = inp.readLine().split(" ").map { it.toInt() }
-                val pokemons = inp.readLines(p)
-                var text = inp.readLines(r).joinToString("").replace(" ", "")
-
-                // iterate
-                pokemon@while (pokemons.isNotEmpty()) {
-                    for (pokemon in pokemons) {
-                        if (pokemon in text) {
-                            // remove if found
-                            text = text.replace(pokemon, "")
-                            pokemons.remove(pokemon)
-                            continue@pokemon
-                        } else if (pokemon.reversed() in text) {
-                            // remove if found reversed
-                            text = text.replace(pokemon.reversed(), "")
-                            pokemons.remove(pokemon)
-                            continue@pokemon
-                        }
-                    }
-                    // just in case
-                    throw Exception("InvalidInput")
-                }
-
-                // report output
-                out.println("Case #${index++}: $text")
-            }
+        File("input.txt").forEachLine { line ->
+            // convert each
+            if (index != 0) out.println("Case #$index: " + convert(line))
+            index++
         }
     }
 }
 
 /**
- * Read multiple lines
+ * Convert each line
  */
-private fun BufferedReader.readLines(p: Int) = (1..p).map { readLine() }.toMutableList()
+fun convert(line: String): String {
+    // split first by '|' (with a bit of cleanup for unused chars)
+    val (words, points_raw) = line.remove(" ").remove("'").split('|')
 
+    val (ignore, element_sep, data_sep) = when {
+        // if dictionary: ignore '{...}', split by "," then by ":"
+        points_raw.startsWith('{') -> Triple(1, ",", ":")
+        // if tuple: ignore '[(...)]', split by "," then by ":"
+        points_raw.startsWith('[') -> Triple(2, "),(", ",")
+        // if assignments: ignore nothing, split by "," then by "="
+        else -> Triple(0, ",", "=")
+    }
+
+    val points = points_raw
+        // ignore
+        .substring(ignore, points_raw.length - ignore)
+        // separation of elements
+        .split(element_sep)
+        // separation of char and value
+        .map { it.split(data_sep) }
+        // convert to map
+        .associate { (c, p) ->
+            // associating to each char its score
+            c[0] to
+                    // fractions are just a division
+                    if ('/' in p) p.split('/').map { it.toDouble() }.let { (l, r) -> l / r }
+                    // normal numbers are better
+                    else p.toDouble()
+        }
+
+    // calculate the score of the two words
+    val (pair1, pair2) = words.split("-").map {
+        // by adding all its points
+        it to it.toCharArray().sumOf { c -> points[c] ?: 0.0 }
+    }
+
+    // and return max
+    return when {
+        pair1.second > pair2.second -> pair1.first
+        pair1.second < pair2.second -> pair2.first
+        // unless they are equal
+        else -> "-"
+    }
+
+}
+
+/**
+ * Just a shorthand of replacing something with nothing
+ */
+private fun String.remove(s: String) = replace(s, "")
 
