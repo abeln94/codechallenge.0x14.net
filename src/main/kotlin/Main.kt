@@ -1,75 +1,132 @@
+import java.io.BufferedReader
 import java.io.File
-import java.time.LocalDate
-import java.time.format.TextStyle
+import java.io.InputStreamReader
+import java.io.PrintWriter
+import java.net.Socket
 import java.util.*
 
-fun main() {
-    // prepare output
-    File("output.txt").printWriter().use { out ->
-        var index = 0
-        // parse input
-        File("input.txt").forEachLine { line ->
-            if (index != 0) out.println("Case #$index: " + convert(line))
-            index++
+//----------------- socket -----------------//
+
+// prepare
+val pingSocket = Socket("codechallenge-daemons.0x14.net", 4321)
+val out = PrintWriter(pingSocket.getOutputStream(), true)
+val input = BufferedReader(InputStreamReader(pingSocket.getInputStream()))
+
+/**
+ * Close socket
+ */
+fun closeAll() {
+    input.close()
+    out.close()
+    pingSocket.close()
+}
+
+/**
+ * sends a command, returns the result
+ */
+fun communicate(data: String): String {
+    // log too
+    println(data)
+    out.println(data)
+    return input.readLine().also { println(it) }
+}
+
+/**
+ * Read all available lines
+ */
+fun readReady() = buildString {
+    Thread.sleep(100) // give a little rest
+    while (input.ready()) append(input.readLine())
+}
+
+//----------------- labyrinth -----------------//
+
+// visited cells, to avoid repeating
+val visited = mutableSetOf<Pair<Int, Int>>()
+
+// a state of the process
+data class State(val x: Int, val y: Int, val direction: String?, val path: List<String>)
+
+// states to check, fifo list (so that the solution is the shortest).
+val states = ArrayDeque<State>()
+
+/**
+ * Solves the labyrinth
+ */
+fun labyrinth() {
+    // skip introduction
+    readReady()
+    // initialize
+    states.add(State(0, 0, null, mutableListOf()))
+    // check all states in order
+    while (states.isNotEmpty()) {
+        // get next position
+        var (x, y, direction, path) = states.remove()
+
+        // traverse where needed (unless this is the first state)
+        if (direction != null) {
+            // calculate new cell
+            val (nx, ny) = when (direction) {
+                "west" -> x + 1 to y
+                "east" -> x - 1 to y
+                "north" -> x to y + 1
+                "south" -> x to y - 1
+                else -> throw Exception()
+            }
+            // skip if already visited
+            if (nx to ny in visited) continue
+            // go there
+            communicate("go to $x,$y")
+            communicate(direction)
+            println("I think I'm in $nx $ny")
+            x = nx
+            y = ny
+        }
+        // mark as visited and calculate new path
+        visited += x to y
+        val newPath = path + "($x,$y)"
+
+        // check exit
+        if (!communicate("is exit?").startsWith("No")) {
+            // exit! log path and exit
+            File("output.txt").printWriter().use { out ->
+                out.write(newPath.joinToString(", "))
+            }
+            return
+        }
+        // no exit, look and prepare next states
+        communicate("look").substringAfterLast(": ").split(" ")
+            .forEach { newDirection ->
+                states.add(State(x, y, newDirection, newPath))
+            }
+
+    }
+}
+
+//----------------- testing -----------------//
+
+/**
+ * The most basic interactive prompt
+ */
+fun prompt() {
+    while (true) {
+        println(readReady())
+        readLine().let {
+            when (it) {
+                // run the program, should be run while in 0,0
+                "_labyrinth" -> labyrinth()
+                // exit
+                "_exit" -> return
+                // send
+                else -> out.println(it)
+            }
         }
     }
 }
 
-// from https://www.oracle.com/java/technologies/javase/jdk8-jre8-suported-locales.html
-val VALID_LANGUAGES = mapOf(
-    "CA" to "ca",
-    "CZ" to "cs",
-    "DE" to "de",
-    "DK" to "da",
-    "EN" to "en",
-    "ES" to "es",
-    "FI" to "fi",
-    "FR" to "fr",
-    "IS" to "is",
-    "GR" to "el",
-    "HU" to "hu",
-    "IT" to "it",
-    "NL" to "nl",
-    "VI" to "vi",
-    "PL" to "pl",
-    "RO" to "ro",
-    "RU" to "ru",
-    "SE" to "sv",
-    "SI" to "sl",
-    "SK" to "sk",
-)
-// CA: catalan 	CZ: czech 	DE: german 	DK: danish 	EN: english
-//ES: spanish 	FI: finnish 	FR: french 	IS: icelandic 	GR: greek
-//HU: hungarian 	IT: italian 	NL: dutch 	VI: vietnamese 	PL: polish
-//RO: romanian 	RU: russian 	SE: swedish 	SI: slovenian 	SK: slovak
+//----------------- main -----------------//
 
-/**
- * Convert each case
- */
-fun convert(line: String): String {
-    // get parts
-    val (date, lang) = line.split(":")
-
-    return runCatching {
-        // get the date
-        LocalDate.parse(
-            // reversed if necessary
-            if (date[2] == '-') date.split("-").reversed().joinToString("-")
-            else date
-        )
-    }.getOrElse { return "INVALID_DATE" }
-        // get its day of week
-        .dayOfWeek
-        // translated by the locale
-        .getDisplayName(
-            TextStyle.FULL_STANDALONE,
-            Locale.Builder()
-                .setLanguage(VALID_LANGUAGES[lang] ?: return "INVALID_LANGUAGE")
-                .build()
-        )
-        // return as lowercase
-        .lowercase()
-        // is java wrong? seems so, strange...
-        .replace("ț", "ţ")
-
+fun main() {
+    prompt()
+    closeAll()
 }
