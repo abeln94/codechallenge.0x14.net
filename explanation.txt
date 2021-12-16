@@ -1,0 +1,19 @@
+No source code this time.
+
+1) Open wireshark, load the pcap file.
+
+multiple packages, all seems to contain a single byte of data, 
+the protocol says that a IP packet is split and sent.
+
+2) Extract all the data, concatenate as bin hex, load in wireshark again ... nothing
+
+After a bit of testing and documentation, see the sequence number not in order.
+I guess the avian carriers were lazy.
+
+3) Sort the packets by sequence number.
+
+4) Extract all the data, concatenate as bin hex, load in wireshark again ... nothing
+
+Notice the binary file...its a qr
+
+5) Scan the qr. Bingo!
