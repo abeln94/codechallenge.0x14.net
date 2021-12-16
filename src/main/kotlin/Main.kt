@@ -1,11 +1,4 @@
-import java.io.BufferedReader
 import java.io.File
-import kotlin.math.max
-
-/**
- * Bitcoin
- */
-const val BTC = "BTC"
 
 fun main() {
     // prepare output file
@@ -14,79 +7,54 @@ fun main() {
         File("input.txt").bufferedReader().use { inp ->
 
             // for each case
-            (1..inp.readLine().toInt()).forEach { index ->
+            (1..inp.readLine().toInt()).forEach { case ->
+                println(case)
+                val line = inp.readLine()
 
-                // prepare trading dictionary of better trades (fromType -> toType:multiplier)
-                // its default value is an empty map, no trades
-                val tradings = mutableMapOf<String, MutableMap<String, Int>>().withDefault { mutableMapOf() }
-
-                // for each website
-                (1..inp.readLine().toInt()).forEach {
-
-                    // and for each trade it offers
-                    (1..inp.readLine().substringAfterLast(" ").toInt()).forEach {
-                        // get and parse the data
-                        val (fromType, s_multiplier, toType) = inp.readLine().split("-")
-                        val multiplier = s_multiplier.toInt()
-
-                        // get the trading
-                        tradings.getOrPut(fromType) {
-                            // if didn't exist, initialize with a new one
-                            mutableMapOf<String, Int>().withDefault { 0 }
-                        }.let { trade ->
-                            // if the multiplier is greater than what was saved, replace it
-                            // note that the default is 0, so we never save a 0 trade
-                            if (multiplier > trade.getValue(toType)) trade[toType] = multiplier
-                        }
+                val operands = mutableListOf<String>()
+                val operations = mutableListOf<(Double, Double) -> Double>()
+                line.split(" ").forEach { token ->
+                    when (token) {
+                        "+" -> operations += { a, b -> a + b }
+                        "-" -> operations += { a, b -> a - b }
+                        "*" -> operations += { a, b -> a * b }
+                        "/" -> operations += { a, b -> a / b }
+                        "=" -> operations += { a, b -> if (a == b) 1.0 else 0.0 }
+                        else -> operands += token
                     }
                 }
 
-                // prepare a list of current testing trades
-                var testing = listOf(BTC to 1)
+                val letters = operands.flatMap { it.toCharArray().toList() }.distinct().filter { it.isLetter() }
 
-                // and a list of already tested trades (to avoid infinite loops and unnecessary tests)
-                val tested = testing.toMutableList()
-
-                // keep the best currently found trade
-                var result = 1
-
-                // and iterate while there are trades to test, and no improved result
-                while (testing.isNotEmpty() && result == 1) {
-                    // for all current testing trades, get the new ones and replace them
-                    testing = testing.flatMap { (fromType, value) ->
-                        // get all next trades (if any)
-                        tradings.getValue(fromType)
-                            // and generate the new trades
-                            .map { (toType, multiplier) ->
-                                toType to value * multiplier
-                            }
-                            // keep distinct to avoid unnecessary computations
-                            .distinct()
-                            // remove those who were already tested (if they happened before, they were better)
-                            .filter { it !in tested }
-                            // and mark the remaining as tested
-                            .also { tested.addAll(it) }
-                    }
-                    // check if there is a BTC result which is better than the current best trade
-                    testing.maxByOrNull { it.first == BTC }?.second?.let {
-                        // if there is, update it
-                        result = max(it, result)
-                    }
-                }
+                val solution = solve(
+                    line,
+                    listOf(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+                    letters, operands, operations
+                ).sorted().joinToString(";").ifEmpty { "IMPOSSIBLE" }
 
                 // report output
-                out.println("Case #${index}: $result")
+                out.println("Case #${case}: $solution")
             }
         }
     }
 }
 
-/**
- * Splits a string into a space separated list of integers
- */
-fun String.splitInts() = split(" ").map { it.toInt() }
+fun solve(
+    line: String,
+    digits: List<Int>,
+    letters: List<Char>,
+    operands: List<String>,
+    operations: MutableList<(Double, Double) -> Double>
+): List<String> {
+    if (letters.isEmpty()) {
+        val parsedOperands = operands.map { it.toDouble() }.toMutableList()
+        val result = operations.fold(parsedOperands.removeFirst()) { currentOperand, operation -> operation(currentOperand, parsedOperands.removeFirst()) }
+        return if (result == 1.0) listOf(line) else emptyList()
+    }
+    val letter = letters[0]
+    return (if (operands.any { it.startsWith(letter) }) digits.filter { it != 0 } else digits).flatMap { number ->
+        fun String.replace() = replace(letter, number.digitToChar())
 
-/**
- * Read multiple lines
- */
-private fun BufferedReader.readLines(p: Int) = (1..p).map { readLine() }.toMutableList()
+        solve(line.replace(), digits - number, letters.drop(1), operands.map { it.replace() }, operations)
+    }
+}
