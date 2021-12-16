@@ -1,19 +1,12 @@
-No source code this time.
-
-1) Open wireshark, load the pcap file.
-
-multiple packages, all seems to contain a single byte of data, 
-the protocol says that a IP packet is split and sent.
-
-2) Extract all the data, concatenate as bin hex, load in wireshark again ... nothing
-
-After a bit of testing and documentation, see the sequence number not in order.
-I guess the avian carriers were lazy.
-
-3) Sort the packets by sequence number.
-
-4) Extract all the data, concatenate as bin hex, load in wireshark again ... nothing
-
-Notice the binary file...its a qr
-
-5) Scan the qr. Bingo!
+1) First enter the user/password in the url, doesn't work.
+2) Try a lot of thinks, then remember and try caesar. bingo
+cylon:kill_all_humans
+3) Enter the user/password again, works. Download file.
+4) Open file, it's a hex dump of another file, convert hex to binary.
+5) Check probable file type, gzip, uncompress, extract file.
+6) Frodo?
+7) Get the program from challenge 5
+8) Check again those extra bytes in the file, only 3 different codes, two repeated a lot
+9) Try binary, convert one to 0, other to 1, the other to space, obtain a 0/1 string with spaces
+10) Convert the string (ignoring spaces in the end) to text
+bingo: 424815162342666
