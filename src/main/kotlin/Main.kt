@@ -15,16 +15,16 @@ fun main() {
                 val unmatched = inp.readLines(n)
                 var points = 0
 
+                // make the groups by continuously extracting k strings with the longer prefix
+                // until no more strings are left
+
                 // while there are still functions unmatched
                 while (unmatched.isNotEmpty()) {
                     // get the best group
                     val (matched, prefixSize) = unmatched.takeBestOfSize(k)
                     // add its points
                     points += prefixSize
-                    if (matched.reduce { l, r -> l.commonPrefixWith(r) }.length != prefixSize)
-                        unmatched.takeBestOfSize(k)
-                    // remove from the unmatched
-                    // [kotlin issue: unmatched.removeAll removes duplicates, we don't want that]
+                    // remove from the unmatched (if there are duplicates, remove only one)
                     matched.forEach { unmatched.remove(it) }
                 }
 
