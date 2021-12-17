@@ -1,63 +1,140 @@
 import java.io.BufferedReader
-import java.io.File
-import java.math.BigInteger
-import kotlin.math.min
+import java.io.InputStreamReader
+import java.io.PrintWriter
+import java.net.Socket
+
+//----------------- socket -----------------//
+
+// prepare
+val pingSocket = Socket("codechallenge-daemons.0x14.net", 7162)
+val out = PrintWriter(pingSocket.getOutputStream(), true)
+val input = BufferedReader(InputStreamReader(pingSocket.getInputStream()))
 
 /**
- * Checks if a number contains the word twenty when written in english
+ * Close socket
  */
-private val Int.isTwenty: Boolean
-    get() = when {
-        // 20 .. 29 is
-        (this % 100) in 20..29 -> true
-        // 20.000 .. 29.000, and 20.000.000 .. 29.000.000 etc
-        this >= 20000 -> (this / 1000).isTwenty
-        // else not
-        else -> false
-    }
+fun closeAll() {
+    input.close()
+    out.close()
+    pingSocket.close()
+}
 
 /**
- * The modulus (a strange number...)
+ * sends a command, returns the result
  */
-const val MOD = 100000007
-val BI_MOD = BigInteger(MOD.toString())
+fun communicate(data: String): String {
+    // log too
+    println(data)
+    out.println(data)
+    return input.readLine().also { println(it) }
+}
 
-fun main() {
-    // prepare output file
-    File("output.txt").printWriter().use { out ->
-        // prepare input file
-        File("input.txt").bufferedReader().use { inp ->
+/**
+ * Read all available lines
+ */
+fun readReady() = buildString {
+    Thread.sleep(100) // give a little rest
+    while (input.ready()) append(input.readLine())
+}
 
-            // read all numbers, no need to repeat each time, compute all directly
-            val numbers = inp.readLines(inp.readLine().toInt()).map { it.toIntOrNull() ?: MOD }
-            // a number bigger than MOD will always return 0
-            // because a>MOD => a! % MOD = a*(a-1)*...*(MOD+1)*MOD*(MOD-1)*...*1 % MOD => MOD*(...) % MOD which is 0
-            // this means that we don't need to calculate all of them, only until MOD-1 at most
-            // this number fits into an int, so if a number doesn't, it means it's bigger
-            // so the result is 0, and we can ignore it
-            val results = mutableMapOf<Int, String>().withDefault { "0" }
+//----------------- primes -----------------//
 
-            // calculate all numbers up to MOD-1 (or the bigger in the input if it's smaller)
-            var result = BigInteger.ONE
-            for (i in 1..min(numbers.maxOrNull() ?: return, MOD - 1)) {
-                if (!i.isTwenty) {
-                    // skip 'twenty' numbers
-                    result = result * BigInteger(i.toString()) % BI_MOD
+const val N = 100
+const val Q = 1500
+
+const val primes = 25 // there are 25 primes between 1 and 100
+
+fun whereAreThePrimesAt() {
+    val divisors = (0..N).map { mutableSetOf(1) }
+    divisors[0].addAll(setOf(0, -1))
+
+    while (true) {
+
+        var i = 0
+        i@ while (i < N) {
+            i++
+
+            val notDivisors = mutableSetOf<Int>()
+
+            var j = 0
+            j@ while (j < N) {
+                j++
+                if (j == i) continue@j
+
+                if (divisors[i].size >= 2) continue@i
+
+                if (((notDivisors - 1) intersect divisors[j]).isNotEmpty()) continue@j
+//                if ((notDivisors - 1).containsAll(divisors[j])) continue@j
+
+                val gcd = communicate("? $i $j").toInt()
+                divisors[i] += gcd.divisors()
+                divisors[j] += gcd.divisors()
+
+                notDivisors += divisors[j] - gcd.divisors()
+
+                println(divisors)
+                println(notDivisors)
+                println("unknowns remaining: " + (divisors.count { it.size == 1 } - 1))
+
+                if (divisors.filter { it.size == 2 }.distinct().size == primes && divisors.count { it.size == 1 } == 1) {
+                    communicate("! " + divisors.indexesOf { it.size == 1 }
+                        .joinToString(" "))
+                    return
                 }
-                // save if one of the required ones
-                if (i in numbers) results[i] = result.toString()
-            }
 
-            // report each output
-            numbers.forEachIndexed { case, p ->
-                out.println("Case #${case + 1}: ${results.getValue(p)}")
+            }
+        }
+
+    }
+}
+
+private fun Int.divisors(): Set<Int> {
+    val result = mutableSetOf(1, this)
+    for (i in 2 until this) {
+        if (this % i == 0) result += i
+    }
+    return result
+}
+
+fun Int.isPrime(): Boolean {
+    var flag = false
+    for (i in 2..this / 2) {
+        // condition for nonprime number
+        if (this % i == 0) {
+            flag = true
+            break
+        }
+    }
+    return flag
+}
+
+//----------------- testing -----------------//
+
+/**
+ * The most basic interactive prompt
+ */
+fun prompt() {
+    while (true) {
+        println(readReady())
+        readLine().let {
+            when (it) {
+                "_primes" -> whereAreThePrimesAt()
+                // exit
+                "_exit" -> return
+                // send
+                else -> out.println(it)
             }
         }
     }
 }
 
+//----------------- main -----------------//
 
-/**
- * Read multiple lines
- */
-private fun BufferedReader.readLines(p: Int) = (1..p).map { readLine() }.toMutableList()
+fun main() {
+    println(readReady())
+    whereAreThePrimesAt()
+    prompt()
+    closeAll()
+}
+
+fun <T> List<T>.indexesOf(filter: (T) -> Boolean) = withIndex().filter { filter(it.value) }.map { it.index }
