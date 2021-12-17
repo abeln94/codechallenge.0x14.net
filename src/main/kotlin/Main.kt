@@ -45,45 +45,52 @@ const val Q = 1500
 const val primes = 25 // there are 25 primes between 1 and 100
 
 fun whereAreThePrimesAt() {
-    val divisors = (0..N).map { mutableSetOf(1) }
-    divisors[0].addAll(setOf(0, -1))
+    var q = 2
+    val divisors = (1..N).associateWith { mutableSetOf(1) }
+    val notDivisors = (1..N).associateWith { mutableSetOf<Int>() }
 
     while (true) {
 
-        var i = 0
-        i@ while (i < N) {
-            i++
+        val i = divisors.filter { it.value.size <= 2 }.keys.random()
 
-            val notDivisors = mutableSetOf<Int>()
-
-            var j = 0
-            j@ while (j < N) {
-                j++
-                if (j == i) continue@j
-
-                if (divisors[i].size >= 2) continue@i
-
-                if (((notDivisors - 1) intersect divisors[j]).isNotEmpty()) continue@j
-//                if ((notDivisors - 1).containsAll(divisors[j])) continue@j
-
-                val gcd = communicate("? $i $j").toInt()
-                divisors[i] += gcd.divisors()
-                divisors[j] += gcd.divisors()
-
-                notDivisors += divisors[j] - gcd.divisors()
-
-                println(divisors)
-                println(notDivisors)
-                println("unknowns remaining: " + (divisors.count { it.size == 1 } - 1))
-
-                if (divisors.filter { it.size == 2 }.distinct().size == primes && divisors.count { it.size == 1 } == 1) {
-                    communicate("! " + divisors.indexesOf { it.size == 1 }
-                        .joinToString(" "))
-                    return
-                }
-
-            }
+        val probable = divisors.filter { (it.value intersect notDivisors.getValue(i)).isEmpty() }.filter { it.value.size > 1 }
+        val j = if (probable.isEmpty()) {
+            (1..N).random()
+        } else {
+            val maxProbable = probable.maxOf { it.value.size }
+            probable.filter { it.value.size == maxProbable }.keys.random()
         }
+
+        if (i == j) continue
+
+        val gcd = communicate("? $i $j").toInt()
+        divisors.getValue(i) += gcd.divisors()
+        divisors.getValue(j) += gcd.divisors()
+
+        notDivisors.getValue(i) += divisors.getValue(j) - divisors.getValue(i)
+        notDivisors.getValue(j) += divisors.getValue(i) - divisors.getValue(j)
+
+        notDivisors.getValue(i) += notDivisors.getValue(i).flatMap { it.mutiples(N) }
+        notDivisors.getValue(j) += notDivisors.getValue(j).flatMap { it.mutiples(N) }
+
+        println(divisors)
+        println(notDivisors)
+        println("unknowns remaining: " + (divisors.count { it.value.size == 1 } - 1))
+
+        if (q++ == Q) communicate("! " + divisors.filter { it.value.size <= 2 }.keys.take(primes + 1).joinToString(" ")).also { return }
+
+        (divisors.values zip notDivisors.values).forEachIndexed { i, (d, nd) ->
+            if ((d intersect nd).isNotEmpty()) throw Exception("${i + 1}")
+        }
+
+        if (divisors.values.filter { it.size == 2 }.distinct().size == primes && divisors.values.count { it.size == 1 } == 1) {
+            communicate(
+                "! " + divisors.filter { it.value.size == 1 }.keys
+                    .joinToString(" ")
+            )
+            return
+        }
+
 
     }
 }
@@ -92,6 +99,14 @@ private fun Int.divisors(): Set<Int> {
     val result = mutableSetOf(1, this)
     for (i in 2 until this) {
         if (this % i == 0) result += i
+    }
+    return result
+}
+
+private fun Int.mutiples(max: Int): Set<Int> {
+    val result = mutableSetOf(this)
+    for (i in 2 until max / this) {
+        result += this * i
     }
     return result
 }
