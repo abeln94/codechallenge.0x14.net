@@ -46,46 +46,43 @@ const val primes = 25 // there are 25 primes between 1 and 100
 
 fun whereAreThePrimesAt() {
     var q = 2
-    val divisors = (1..N).associateWith { mutableSetOf(1) }
-    val notDivisors = (1..N).associateWith { mutableSetOf<Int>() }
+    val probable = (1..N).associateWith { (1..N).toMutableSet() }
+
+    val found = mutableSetOf<Int>()
 
     while (true) {
 
-        val i = divisors.filter { it.value.size <= 2 }.keys.random()
-
-        val probable = divisors.filter { (it.value intersect notDivisors.getValue(i)).isEmpty() }.filter { it.value.size > 1 }
-        val j = if (probable.isEmpty()) {
-            (1..N).random()
-        } else {
-            val maxProbable = probable.maxOf { it.value.size }
-            probable.filter { it.value.size == maxProbable }.keys.random()
-        }
+        val (i, j) = (1..N).flatMap { i ->
+            (1..N).map { j ->
+                (i to j) to (probable.getValue(i) intersect probable.getValue(j)).size
+            }
+        }.allMaxBy { it.second }.map { it.first }.random()
 
         if (i == j) continue
 
         val gcd = communicate("? $i $j").toInt()
-        divisors.getValue(i) += gcd.divisors()
-        divisors.getValue(j) += gcd.divisors()
+        probable.getValue(i) -= gcd.coprime().toSet()
+        probable.getValue(j) -= gcd.coprime().toSet()
 
-        notDivisors.getValue(i) += divisors.getValue(j) - divisors.getValue(i)
-        notDivisors.getValue(j) += divisors.getValue(i) - divisors.getValue(j)
-
-        notDivisors.getValue(i) += notDivisors.getValue(i).flatMap { it.mutiples(N) }
-        notDivisors.getValue(j) += notDivisors.getValue(j).flatMap { it.mutiples(N) }
-
-        println(divisors)
-        println(notDivisors)
-        println("unknowns remaining: " + (divisors.count { it.value.size == 1 } - 1))
-
-        if (q++ == Q) communicate("! " + divisors.filter { it.value.size <= 2 }.keys.take(primes + 1).joinToString(" ")).also { return }
-
-        (divisors.values zip notDivisors.values).forEachIndexed { i, (d, nd) ->
-            if ((d intersect nd).isNotEmpty()) throw Exception("${i + 1}")
+        while (true) {
+            probable.filter { it.value.size == 1 }.filter { it.value.random() !in found }
+                .takeUnless { it.isEmpty() }
+                ?.forEach { n ->
+                    found += n.value.random().also { println("FOUND $it") }
+                    probable.filter { it.key != n.key }.forEach { it.value -= n.value.random() }
+                } ?: break
         }
 
-        if (divisors.values.filter { it.size == 2 }.distinct().size == primes && divisors.values.count { it.size == 1 } == 1) {
+        if (probable.any { it.value.isEmpty() }) throw Exception()
+
+        println(probable)
+        println("unknowns remaining: " + (probable.count { it.value.size > 1 }))
+
+        if (q++ == Q) communicate("! 1").also { return }
+
+        if (probable.values.none { it.size != 1 }) {
             communicate(
-                "! " + divisors.filter { it.value.size == 1 }.keys
+                "! " + probable.filter { it.value.random().isPrime() }.map { it.key }
                     .joinToString(" ")
             )
             return
@@ -94,6 +91,31 @@ fun whereAreThePrimesAt() {
 
     }
 }
+
+private fun <E> List<E>.allMaxBy(mapper: (E) -> Int): List<E> {
+    val max = this.maxOfOrNull(mapper)
+    return filter { mapper(it) == max }
+}
+
+private fun gcd(a: Int, b: Int): Int {
+    var n1 = a
+    var n2 = b
+
+    while (n1 != n2) {
+        if (n1 > n2)
+            n1 -= n2
+        else
+            n2 -= n1
+    }
+
+    return n1
+}
+
+private fun Int.coprime(): List<Int> {
+    if (this == 1) return emptyList()
+    return (1..N).filter { gcd(it, this) == 1 }
+}
+
 
 private fun Int.divisors(): Set<Int> {
     val result = mutableSetOf(1, this)
@@ -112,11 +134,11 @@ private fun Int.mutiples(max: Int): Set<Int> {
 }
 
 fun Int.isPrime(): Boolean {
-    var flag = false
+    var flag = true
     for (i in 2..this / 2) {
         // condition for nonprime number
         if (this % i == 0) {
-            flag = true
+            flag = false
             break
         }
     }
@@ -132,12 +154,13 @@ fun prompt() {
     while (true) {
         println(readReady())
         readLine().let {
+            println("> $it")
             when (it) {
                 "_primes" -> whereAreThePrimesAt()
                 // exit
                 "_exit" -> return
                 // send
-                else -> out.println(it)
+                else -> out.println("? $it")
             }
         }
     }
@@ -145,9 +168,25 @@ fun prompt() {
 
 //----------------- main -----------------//
 
+
 fun main() {
-    println(readReady())
-    whereAreThePrimesAt()
+
+    val pairs = (1..N).associateWith { n ->
+        (1..N).filter { it != n }.map { gcd(it, n) }.groupBy { it }.map { it.key to it.value.size }.toMap()
+    }
+
+    println(pairs)
+
+    pairs.forEach { (n, map) ->
+        println(
+            "$n is " +
+                    pairs.filterValues { it.toString() == map.toString() }.keys
+
+        )
+    }
+
+    return
+
     prompt()
     closeAll()
 }
