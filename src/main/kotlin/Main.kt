@@ -1,89 +1,97 @@
 import java.io.File
-import java.math.BigInteger
 
-val players = listOf("Edu", "Alberto")
-
-val THREE = BigInteger.valueOf(3)
-
-fun main() {
+fun convertToMatlab() {
 
     // prepare output file
-    File("output.txt").printWriter().use { out ->
-        // prepare input file
-        File("input.txt").bufferedReader().use { inp ->
+    File("matlab.txt").printWriter().use { out ->
 
-            // for each case
-            (1..inp.readLine().toInt()).forEach { case ->
-                inp.readLine().toInt() // n, ignored
-                val originalPiles = inp.readLine().split(" ").map { it.toBigInteger() }
+        val cases = readInput()
 
-                // find the outcome of each pile (see test below)
-                val values = originalPiles.map { it.mod(THREE).toInt() }
-//                println("$case -> $values")
+        var matlab = "T = {${cases.size}};"
 
-                // the remainder decides the outcome of that pile for us (first player)
-//                val loses = values.count { it == 0 } // piles we will lose, unused
-                val wins = values.count { it == 1 } // piles we will win
-                val decides = values.count { it == 2 } // piles where we can decide
+        cases.forEach { (_, count) ->
 
-                // in order to know who can win, we use a similar %3 approach
-                val winner = when (decides % 3) {
-                    // we lose, but if the number of wins is odd we needed to lose, so we win!
-                    0 -> 1 - (wins % 2)
-                    // we win, unless we needed to lose
-                    1 -> wins % 2
-                    // the other decides, so unfortunately chooses to win and we lose
-                    2 -> 1
-                    else -> throw Exception()
-                }
+            matlab += if (count.size != 1) """
+                    
+                    symbols = (1:${count.size});
+                    prob = [${count.values.joinToString(" ")}]/${count.values.sum()};
+                    dict = huffmandict(symbols,prob, 2, 'min');
+                    T = [T ; {length(dict)} ; dict(:,2)];
+                """.trimIndent()
+            else "\n" +
+                    "T = [T ; {1} ; {1}];"
 
-                // report output
-                out.println("Case #${case}: ${players[winner]}")
-            }
+
         }
+        matlab += """
+                
+                T = cell2table(T)
+                writetable(T,'myDataFile.csv')
+            """.trimIndent()
+        out.println(matlab)
     }
 }
 
-data class State(val piles: List<BigInteger>, val player: Int)
+fun readInput(): MutableList<Pair<List<String>, Map<String, Int>>> {
+    val cases = mutableListOf<Pair<List<String>, Map<String, Int>>>()
+
+    // prepare input file
+    File("input.txt").bufferedReader().use { inp ->
+
+        val n = inp.readLine().toInt()
 
 
-fun test() {
-    // empirical test for 1 pile
-    // was found by trying and checking outcomes, and it appears it is true always
-    // if you divide the pile number by 3, the remainder tells you who will win
+        var matlab = "T = {$n};"
 
-    // the outcome of the first player for that pile
-    val state = mutableMapOf(0 to false, 1 to true)
-    n@ for (n in 2 until 999) {
-        var i = 1
-        while (i <= n) {
-            if (state[n - i] == true) {
-                state[n] = false
-                continue@n
+        // for each case
+        (1..n).forEach { case ->
+
+            // read instructions
+            val instructions = (1..inp.readLine().toInt()).map {
+                inp.readLine().substringBefore(" ")
             }
-            i *= 2
+            val count = instructions.groupBy { it }.mapValues { it.value.size }
+
+            cases += instructions to count
         }
-        state[n] = true
     }
 
-    // visualization
-    fun convertDecimal(decimal: Int): String {
-        var binary = ""
-        var res = decimal
-        while (res != 0) {
-            binary = (res % 2L).toString() + binary
-            res /= 2
+    return cases
+}
+
+
+fun main() {
+//    convertToMatlab()
+    convertFromMatlab()
+}
+
+fun convertFromMatlab() {
+
+    // prepare output file
+    File("output.txt").printWriter().use { out ->
+
+        val cases = readInput()
+
+        // prepare input file
+        File("matlab.txt").bufferedReader().use { inp ->
+
+            inp.readLine()
+
+            // for each case
+            (1..inp.readLine().substringBefore(",").toInt()).forEach { case ->
+
+                val sizes = (1..inp.readLine().substringBefore(",").toInt()).map {
+                    inp.readLine().split(",").filter { it.isNotBlank() }.size
+                }
+
+                val (instructions, count) = cases[case-1]
+
+                val size = instructions.sumOf { 2 + sizes[count.keys.indexOf(it)] }
+                val diff = (sizes.maxOrNull() ?: return) - (sizes.minOrNull() ?: return)
+                // report output
+                out.println("Case #$case: $size, $diff")
+            }
+
         }
-        return binary.padStart(8, '0')
     }
-    println(state.map {""+ convertDecimal(it.key) + " -> " + (if (it.value) "WIN" else "lose") }.joinToString("\n"))
-
-    // some element is not what we expect?
-    println(state.filter { (it.key % 3 == 1) != it.value }) // result, none
-
-    // conclusion: works (at least for very big numbers)
-    // divide the number by 3, take the remainder, assuming the other player plays perfectly:
-    // if 0, you always lose (if you want to win, you can't, if you want to lose, you lose)
-    // if 1, you always win (if you want to win, you win, if you want to lose, you can't)
-    // if 2, you can decide the outcome, win or lose
 }
