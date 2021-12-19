@@ -1,12 +1,4 @@
-1) First enter the user/password in the url, doesn't work.
-2) Try a lot of thinks, then remember and try caesar. bingo
-cylon:kill_all_humans
-3) Enter the user/password again, works. Download file.
-4) Open file, it's a hex dump of another file, convert hex to binary.
-5) Check probable file type, gzip, uncompress, extract file.
-6) Frodo?
-7) Get the program from challenge 5
-8) Check again those extra bytes in the file, only 3 different codes, two repeated a lot
-9) Try binary, convert one to 0, other to 1, the other to space, obtain a 0/1 string with spaces
-10) Convert the string (ignoring spaces in the end) to text
-bingo: 424815162342666
+1) Picture without alpha, no alpha hidden
+2) PNG with valid IEND at the end, no hidden data
+3) Tested some color modifications, nothing obvious, the line seem to be a specific greyscale
+4) The line is a separate colorspace, and without aliasing (the rest of the image is). Something hidden here.
