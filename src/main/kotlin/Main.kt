@@ -1,10 +1,7 @@
-
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
-import java.nio.file.Files
 import javax.imageio.ImageIO
-import kotlin.experimental.or
 import kotlin.math.abs
 
 
@@ -19,24 +16,57 @@ fun main() {
     println(text.windowed(8, 8))
     File("output.bin").writeBytes(text.windowed(8, 8).map { Integer.parseInt(it, 2).toByte() }.toByteArray()) // .map { if(it.toChar().isLetterOrDigit()) 0.toByte() else it }
 
-//    File("output.txt").writeText(text.windowed(8, 8).map { Integer.parseInt(it, 2).toString(16).padStart(2,'0') }.joinToString(" "))
-    // .map { if(it[0]=='1') "00100000" else it }
-
-    fun decodeBinary(s: String): ByteArray {
-        val data = ByteArray(s.length / 8)
-        for (i in 0 until s.length) {
-            val c = s[i]
+    val window = ArrayDeque(text.windowed(8, 8))
+    val data = mutableListOf<Char>()
+    while (window.isNotEmpty()) {
+        for (c in window.removeFirst().reversed()) {
             if (c == '1') {
-                data[i.shr(3)] = data[i.shr(3)].or(0x80.shr(i.and(0x7)).toByte())
-            } else if (c != '0') {
-                throw IllegalArgumentException("Invalid char in binary string")
+                val char = window.removeFirst().toChar()
+                data += char
+                print(char)
+            } else {
+                val c = window.removeFirst() + window.removeFirst()
+                val s = c.drop(11).take(1)
+                val p = 18+(c[8].toString().repeat(20)+c.substring(8,12)+c.take(8)).toLong(2).toInt()
+//                val p = 18 + if (s == "0")
+//                    c.take(8).toInt(2)
+//                else
+//                    (c.drop(8).take(4).repeat(6)+c.take(8)).toLong(2).toInt()
+                val l = 3 + c.takeLast(4).toUByte(2).toByte()
+                if (p in data.indices && p + l in data.indices) {
+                    val message = data.subList(p, p + l).joinToString("")
+                    message.toCharArray().forEach { data += it }
+                    print(message)
+                } else {
+                    val message = "?".repeat(l) //data.subList(p, p + l).joinToString("")
+                    message.toCharArray().forEach { data += it }
+                    print(message + "{" + c + "}")
+                }
             }
         }
-        return data;
     }
 
-    val data = decodeBinary(text)
-    Files.write(File("file.txt").toPath(), data)
+//    println(text.windowed(8, 8))
+//    File("output.bin").writeBytes(text.windowed(8, 8).map { Integer.parseInt(it, 2).toByte() }.toByteArray()) // .map { if(it.toChar().isLetterOrDigit()) 0.toByte() else it }
+//
+//    File("output.txt").writeText(text.windowed(8, 8).map { Integer.parseInt(it, 2) }.map{ if(it>127) it.toString(16) else "("+it.toString(16)+"="+it.toChar()+")" }.joinToString(" "))
+//     .map { if(it[0]=='1') "00100000" else it }
+
+//    fun decodeBinary(s: String): ByteArray {
+//        val data = ByteArray(s.length / 8)
+//        for (i in 0 until s.length) {
+//            val c = s[i]
+//            if (c == '1') {
+//                data[i.shr(3)] = data[i.shr(3)].or(0x80.shr(i.and(0x7)).toByte())
+//            } else if (c != '0') {
+//                throw IllegalArgumentException("Invalid char in binary string")
+//            }
+//        }
+//        return data;
+//    }
+//
+//    val data = decodeBinary(text)
+//    Files.write(File("file.txt").toPath(), data)
 
     return
 
@@ -147,6 +177,9 @@ fun main() {
 //    }
 
 }
+
+private fun String.toInt() = Integer.parseInt(this, 2)
+private fun String.toChar() = Integer.parseInt(this, 2).toByte().toChar()
 
 private fun String.asBinary() =
     windowed(8, 8).map { Integer.parseInt(it, 2).toChar() }.joinToString("")
