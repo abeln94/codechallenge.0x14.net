@@ -11,202 +11,234 @@
  * 9) Same git output, but now the payload is a random bytecode, what if I write is as file...
  * 10) Aja! It's a gzip (the header 1f  8b  08). Another tablet, third tweak...
  * 11) Another compressed text
+ *
+ * 12) Finally, after almost decoding the lzw algorithm by myself, I did it
+ *
+ * thanks for the challenge
  */
 import java.awt.Color
-import java.awt.image.BufferedImage
 import java.io.File
+import java.security.MessageDigest
 import javax.imageio.ImageIO
+import kotlin.experimental.or
 import kotlin.math.abs
 
-// I DISCOVERED THE COMPRESSION ALGORITHM BY MYSELF!!!!!
-// yes, really, the 18, the 3, the 1=literal 0=code, etc. but there is a negative index which is impossible to know
-// later (it's 2AM) I remebered the hint video, and found it is in fact exactly as what I discovered
+// ----------------- challenges ------------ //
 
-// This is the full code, as with a previous submission it is not cleaned nor commented
-// I just want this to end, sorry
-// thanks for the challenge
-
+/**
+ * Main
+ */
 fun main() {
+    firstTablet()
+    secondTablet()
+    thirdTablet()
+}
 
+/**
+ * Solves the first tablet
+ */
+fun firstTablet() {
+    // decode and print
+    val result = decodeTablet("hidden_toy_story.png")
+    println(result.asBinary())
+}
 
-//    val text = "00011111100010110000100000000000111110111000001010010110011000010000001011111111001011011000111101000001011100101000001100110000000011000100010111110111001111011000010100001110100100000000001000001001000110000111000011110111010111011111010000000000001111011000000010110001100001011111000111000100010010000000110010010110100100111010011010100111101011110110000110111010110100111110100010111111111111111111010111110101111110010100000000000010010110010001000000001000100111110110000000111001111100100000111011111000001111100011000111011111000100110011100000000110011000101000000111000101001111000001000001010010110111100011011011011110000001011110011010100010101001110110110000010111001100001111000000001100000011101111111100011101110111101010110001011001001011100110000010100010001011001001110011111101000000100101111111000101100110110010011100111001011100100101111110000101100010111011000101110000111010111011011001100011010010101110011110101001001100101110010000101000100100000101001100100000000011111111111000110111011011000001010101111100010100110100100110010110010011000100011000110000101111100010000000001000110001001011001101000010000011000111011100111100001011000011101101000010010010001100000001010100001101000010011010000100100101011100101101000010110011000001010010110001100000000011100000001011001001000011111010000011111001110100110000000111001001110110000111000101011000100101110110000011101000001011101111000000100010110011001101011000010000110011000000000111011100100100011110110010001010010010111110001001011011001110100110100011101011100010110100111011101101001000101110001001000100011100100101100011110101011111110001011100101110111000101001010000111010101101001010001111111100110110111000110001110101010110000111110101011101011010001111111010010000100101100100110011101110010101111000001101101110100011001101001110110011111010101010110011111011011010000001101101110100111110101011101011011011011011101011011001111100011110101011111010010001101011011110100011010100010011100011011000010100010011010101100011100011111001110101101010011101001000011110111010001101011100101001010110000110111111100110110111001111110101001111010010000110000001100001100111000000010000000000000000"
+/**
+ * Solves the second tablet
+ */
+fun secondTablet() {
+    // decode and print
+    val result = decodeTablet("9788b1d0ecc849920aae9aa182e8ce54088d3684f2af994d1525223f313318c6.png")
+    println(result.asBinary())
 
-    val text =
-        "11111111001111100010000001010100011011110111100101110011001000000110100111111111011011100010000001110100011010000110010100100000010000010111010011011111011101000110100101100011000010100011111011011100111100100100101001100101111111110111010000111010001000000100100001110101011011010110000101101110111111110111001100100000011000010111001001100101001000000110110101100101111111110110000101101110011101000010000001110100011011110010000001110111111111110110111101110010011010110010000001100001011011100110010000100000111011110111001101110111011001010110000100011100000000100110010101100001011100101111111101101110001000000110000100100000011011000110100101110110011010011111111101101110011001110010111000100000010101000110100001101111011100111101100101100101111101111111000000101101000000010111001001111001000111010000000101100111011001011111111101110100001000000111001001101001011000110110100000100000011100010111111101110101011010010110001101101011001000000110111101110010001110010000000111110011011001010010000000101101000000011111100111110000011001010111100001110000011001011011110101101110010001010000000001101111011001100010000001101111111110001111000001110010101111110111001100101100001000000110000101101100011011000101001100000010011001001111111000111011000000010110010100100000011100100110010101110100011100100110100111011111011000100111010101110100011010010110111100010001000000000111001101101111111001110110110101100101011101110111111100000000011010010000000001101100011011110110111011100101011001111111011111110010011011001001000000000000010000000000000101100001011101000010011111111101011100111011000000000011011001010111001101110011011011110110111000101110111111110010000001010101011011100110011001101111011100100111010001110101111111110110111001100001011101000110010101101100011110010010000001110111010000010110010101011100000000111101100100000000110100000000000001010100000000011100001000000111011100111101101100000001011111010110110000110011000000010110010101100100001011100010000001000001001001110000000000011010111110001111000001101110110110110000000101101000011000010110100000000000000111100000000011111101000000101111101011110111111100010110110110000100000000100110111101110110011001010111001000100000101111110110000101100111011000010110100101101110001011100000000100000100010001011111111101100100011101110110000101110010011001000011101000100000010011001111110011000111000000101100010100000110010010010110011000100000011110010110111101110101111101110010000001110011011001010110100100000000001000000111001101110100011100101011111101100001011011100110011101100101011100100010110011100110000000000110110001111111011011000110111101110111001000000110100001101001011011010011001100010101111111110101001101110000011010010110101101100101001110100010000001010011111110010110111101000111000000101011111100000100011100110111010001101111011100100111100110110101001011100010010100000010011101110100100100000001011101110110000111000000000000110111001011110111011001010110000101101100110001010000010000111111001000000100010001101111001001110110111000100111011101001111110000000001000101000001000101101000001111010000000011110011111101101111111101100110011100100110100101100100011001110110010100101110000010101011100100001010000001100001001110111101000000100110100101110100001011000101010000010001001001111110111001101000000000000110011001101001011011101000010100000000011110010010000001101101111001110110000101100100011001011110001000010000110000000001000101110011001000000110011010011001011000010110011000010000100011000001001001100101011000111001010000000000011110010000000101101100011110110110100101100110111110010001000001110011001000000011010000110010001001010000001010011100000010000010101111111000111100010110011101100001011011010100011000000001100011100001000001101000010011110110000100110010001101010011011000101111001000110000000000100000011011011100011100000000000011010110000111010011000100100101011101100101100111110001000011111011000100001101000000000000010101000001001011111100110010000001010111101111000100010010000001101110001011100110111000001010000010101110011101010000010100110011101001000001000000000000101000100110011011010111010101110011101011101011100100010000011011110110111101101011001110010000000001101011101111110001001001110011111111110010000000111001001100000110010000110011011001000011010101100010111111110011000101100010001110000011010000110110011001010011000001100101111111110110010101100011001110000110010001100001001110010011010001100011111111110110010000110001001101110011000101100101011000100110000100110011111111110011000101100001001101010110010001100001001100110011100000110001111111110110000101100011001101010011011001100010001101000110000100110010111111110011011001100110001100000110000100111000001100100110001100110110111111110110001100110000001100010110010000110010001110010110001100110100000000110110000100001010"
+    // then write the data into a file
+    File("output.zip").writeBytes(result.drop(20 * 8).take(274 * 8).asBytes())
+}
 
-//    println(text.windowed(8, 8))
-    File("output.bin").writeBytes(text.windowed(8, 8).map { Integer.parseInt(it, 2).toByte() }.toByteArray()) // .map { if(it.toChar().isLetterOrDigit()) 0.toByte() else it }
+/**
+ * Solves the third tablet
+ */
+fun thirdTablet() {
+    // decode and print
+    val result = decodeTablet("056deccabd65794ad9f54c379c03912b2c81d60938a5e7c85086e45094e93a5c.png")
+    println(result.asBinary())
 
-    val window = ArrayDeque(text.windowed(8, 8))
-    val data = mutableListOf(' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',)
-    while (window.isNotEmpty()) {
-        for (c in window.removeFirst().reversed()) {
-            if(window.isEmpty()) break
-            if (c == '1') {
-                val char = window.removeFirst().toChar()
-                data += char
-                print(char)
-            } else {
-                val c = window.removeFirst() + window.removeFirst()
-                val p = 18+(c[8].toString().repeat(20)+c.substring(8,12)+c.take(8)).toLong(2).toInt()
-                val l = 3 + c.takeLast(4).toUByte(2).toByte()
-                val message = if (p>=0) {
-                    data.subList(p, p + l).joinToString("")
-                } else {
-                    " ".repeat(l)
-                }
-                message.toCharArray().forEach { data += it }
-                print(message)
-            }
-        }
-    }
+    // then decode the LZW
+    val final = decodeLZW(result.drop(20 * 8).take(607 * 8))
+    println(final)
 
-//    println(text.windowed(8, 8))
-//    File("output.bin").writeBytes(text.windowed(8, 8).map { Integer.parseInt(it, 2).toByte() }.toByteArray()) // .map { if(it.toChar().isLetterOrDigit()) 0.toByte() else it }
-//
-//    File("output.txt").writeText(text.windowed(8, 8).map { Integer.parseInt(it, 2) }.map{ if(it>127) it.toString(16) else "("+it.toString(16)+"="+it.toChar()+")" }.joinToString(" "))
-//     .map { if(it[0]=='1') "00100000" else it }
+    // finally calculate the sha256 and write to file
+    File("output.txt").writeText(final.sha256())
+}
 
-//    fun decodeBinary(s: String): ByteArray {
-//        val data = ByteArray(s.length / 8)
-//        for (i in 0 until s.length) {
-//            val c = s[i]
-//            if (c == '1') {
-//                data[i.shr(3)] = data[i.shr(3)].or(0x80.shr(i.and(0x7)).toByte())
-//            } else if (c != '0') {
-//                throw IllegalArgumentException("Invalid char in binary string")
-//            }
-//        }
-//        return data;
-//    }
-//
-//    val data = decodeBinary(text)
-//    Files.write(File("file.txt").toPath(), data)
+// ------------ algorithms ------------- //
 
-    return
+/**
+ * Decodes a generic tablet for the challenge
+ */
+fun decodeTablet(file: String) = buildString {
 
-//    val img = ImageIO.read(File("hidden_toy_story.png"))
-//    val img = ImageIO.read(File("9788b1d0ecc849920aae9aa182e8ce54088d3684f2af994d1525223f313318c6.png"))
-    val img = ImageIO.read(File("056deccabd65794ad9f54c379c03912b2c81d60938a5e7c85086e45094e93a5c.png"))
+    // read image
+    val img = ImageIO.read(File(file))
 
+    // initial data (hardcoded position)
     val visited = mutableSetOf<Pair<Int, Int>>()
-
     var x = 81
     var y = 114
 
-    val reds = mutableListOf<Int>()
-    val greens = mutableListOf<Int>()
-    val blues = mutableListOf<Int>()
+    // path algorithm, follow points (until there are no new points to follow)
+    while (x to y != visited.lastOrNull()) {
 
-    val result = buildString {
+        // mark as visited and get the color
+        visited += x to y
+        val color = Color(img.getRGB(x, y))
+        val red = color.red
+        val green = color.green
+        val blue = color.blue
 
-        fun aprint(a: Any?) = print(a).also { append(a) }
+        // append its last bits to the output string
+        append((red % 2 != 0).bin)
+        append((green % 2 != 0).bin)
+        append((blue % 2 != 0).bin)
 
-        img@ while (true) {
+        // for each neighbour
+        for ((dx, dy) in listOf(
+            // 4 sides
+            0 to 1, 1 to 0, 0 to -1, -1 to 0,
+            // 4 diagonals
+            1 to -1, 1 to 1, -1 to 1, -1 to -1,
+            // 'jumps'
+            0 to 2, 2 to 0, 0 to -2, -2 to 0
+        )) {
 
-            visited += x to y
-            val red = img.red(x, y)
-            val green = img.green(x, y)
-            val blue = img.blue(x, y)
+            // get next point
+            val i = x + dx
+            val j = y + dy
 
-//        println("$x,$y -> $red $green $blue")
+            // ignore already visited
+            if ((i to j) in visited) continue
 
-//            aprint(red.binary(8))
-//            print(" ")
-//            aprint(green.binary(8))
-//            print(" ")
-//            aprint(blue.binary(8))
-//            println()
+            // check if the color difference is small, otherwise skip
+            val newColor = Color(img.getRGB(i, j))
+            if (abs(newColor.red - red) > 5) continue
+            if (abs(newColor.green - green) > 5) continue
+            if (abs(newColor.blue - blue) > 5) continue
 
-            aprint((red - 72).binary(1))
-            aprint((green - 72).binary(1))
-            aprint((blue - 72).binary(1))
-
-//            if (reds.isNotEmpty()) {
-//                aprint(((red > (reds.last()))).bin)
-//                aprint(((green > (greens.last()))).bin)
-//                aprint(((blue > (blues.last()))).bin)
-//            }
-
-//            val d = 75
-//            aprint(if (red != d) "1" else "0")
-//            aprint(if (blue != d) "1" else "0")
-//            aprint(if (green != d) "1" else "0")
-//        aprint((blue != green).bin)
-//            aprint((green % 2 == 0).bin)
-//            aprint((green == 77).bin)
-
-            reds += red
-            greens += green
-            blues += blue
-
-            for ((dx, dy) in listOf(0 to 1, 1 to 0, 0 to -1, -1 to 0, 1 to -1, 1 to 1, -1 to 1, -1 to -1, 0 to 2, 2 to 0, 0 to -2, -2 to 0)) {
-                val i = x + dx
-                val j = y + dy
-                if (i == x && j == y) continue
-
-//                if (img.red(i, j) > 100) continue
-
-
-                if (abs(img.red(i, j) - red) > 5) continue
-                if (abs(img.green(i, j) - green) > 5) continue
-                if (abs(img.blue(i, j) - blue) > 5) continue
-
-                if ((i to j) in visited) continue
-
-                x = i
-                y = j
-                continue@img
-            }
-            break@img
+            // mark as next point and repeat
+            x = i
+            y = j
+            break
         }
-
     }
 
-//    val inverted = result.map { (it == '0').bin }.joinToString("")
-    println()
-    println()
-    println()
-    println(result.asBinary())
-//    println()
-//    println(inverted)
-//    println(inverted.asBinary())
-//    println()
-//    println(result.reversed())
-//    println(result.reversed().asBinary())
-//    println()
-//    println(inverted.reversed())
-//    println(inverted.reversed().asBinary())
-//
-//    println()
-//    println(reds.histogram())
-//    println(greens.histogram())
-//    println(blues.histogram())
-//    println(result.length/8)
-
-//    (visited.minOf { it.second }..visited.maxOf { it.second }).forEach { y ->
-//        (visited.minOf { it.first }..visited.maxOf { it.first }).forEach { x ->
-//            print(if (x to y in visited) "#" else " ")
-//        }
-//        println()
-//    }
-
+    // for debug: print the full path
+    (visited.minOf { it.second }..visited.maxOf { it.second }).forEach { py ->
+        (visited.minOf { it.first }..visited.maxOf { it.first }).forEach { px ->
+            // print visited nodes
+            print(if (px to py in visited) "#" else " ")
+        }
+        println()
+    }
 }
 
-private fun String.toInt() = Integer.parseInt(this, 2)
-private fun String.toChar() = Integer.parseInt(this, 2).toByte().toChar()
+/**
+ * Decodes a LZW string
+ * 'Funny' thing, I discovered the algorithm by myself.
+ * The 18, the 3, the 1=literal 0=code, the position of each command bit, etc
+ * But there is a negative index at the beginning that was impossible to decipher
+ * Later, I remembered the video hint and found that the algorithm ... is exactly as I discovered, ouch, but nice I guess
+ * It turns out there is a negative padding of...spaces, so that was it
+ */
+fun decodeLZW(text: String) = buildString {
+    // prepare data to read as a fifo queue
+    val window = ArrayDeque(text.windowed(8, 8))
 
-private fun String.asBinary() =
-    windowed(8, 8).map { Integer.parseInt(it, 2).toChar() }.joinToString("")
+    // prepare the 'negative' sliding window data as 18 spaces. This is what I couldn't discover myself
+    val data = " ".repeat(18).toMutableList()
 
+    // now start decoding
+    while (window.isNotEmpty()) {
+        // take the next command, reverse and focus on each binary digit
+        for (command in window.removeFirst().reversed()) {
+            // skip if there is no more data to read
+            if (window.isEmpty()) break
 
-private fun <T : Comparable<T>> Iterable<T>.histogram() =
-    groupBy { it }.mapValues { it.value.size }.entries.sortedBy { it.key }
+            // if the digit is 1, it's a literal
+            if (command == '1') {
+                // just get the data and append it directly (to the data and to the output)
+                val char = window.removeFirst().toChar()
+                data += char
+                append(char)
+            } else {
+                // if '0', it's a sliding window command [aaaa bbbb  cccc dddd]
+                val c = window.removeFirst() + window.removeFirst()
+                // the position is 18 + [cccc aaaa bbbb], but the sliding window starts at -18 so we need to add 18 twice
+                val p = 18 * 2 + (c.substring(8, 12) + c.take(8)).as3Int()
+                // the length is [dddd]
+                val l = 3 + c.takeLast(4).toUByte(2).toByte()
 
+                // get message and append (data & output)
+                val message = data.subList(p, p + l).joinToString("")
+                message.toCharArray().forEach { data += it }
+                append(message)
+            }
+        }
+    }
+}
 
-fun BufferedImage.red(x: Int, y: Int) = Color(getRGB(x, y)).red
-fun BufferedImage.green(x: Int, y: Int) = Color(getRGB(x, y)).green
-fun BufferedImage.blue(x: Int, y: Int) = Color(getRGB(x, y)).blue
+// ------------ functions -------- //
 
-fun Int.binary(length: Int) = toBigInteger().toString(2).padStart(length, '0').takeLast(length)
+/**
+ * if true, '1' else '0'
+ */
 val Boolean.bin get() = if (this) '1' else '0'
+
+/**
+ * Converts a 0/1 string of 3 bytes into an int
+ */
+// we need to extend the sign to 4 bytes, but then can't parse as int (negative is not allowed)
+// so instead parse as long and cast
+private fun String.as3Int() = (get(0).toString().repeat(20) + this).toLong(2).toInt()
+
+/**
+ * Converts a 0/1 string into a byte array
+ */
+private fun String.asBytes(): ByteArray {
+    // for some reason the easy parseInt doesn't work correctly here
+    //    return windowed(8, 8).map { Integer.parseInt(it, 2).toByte() }.toByteArray()
+
+    // so instead use a manual approach
+    val data = ByteArray(length / 8)
+    for (i in indices) {
+        val c = get(i)
+        if (c == '1') {
+            data[i.shr(3)] = data[i.shr(3)].or(0x80.shr(i.and(0x7)).toByte())
+        } else if (c != '0') {
+            throw IllegalArgumentException("Invalid char in binary string")
+        }
+    }
+    return data
+}
+
+/**
+ * Converts a 0/1 string into a char
+ */
+private fun String.toChar() = Integer.parseInt(this, 2).toChar()
+
+/**
+ * Converts a 0/1 string into a string (convert each 8 bytes to a char)
+ */
+private fun String.asBinary() =
+    windowed(8, 8).map { it.toChar() }.joinToString("")
+
+/**
+ * Calculates the sha256 of the string
+ */
+fun String.sha256(): String {
+    // just using the java function
+    return MessageDigest
+        .getInstance("SHA-256")
+        .digest(toByteArray())
+        // and then formatting as string
+        .joinToString("") { it.toUByte().toString(16).padStart(2, '0') }
+}
