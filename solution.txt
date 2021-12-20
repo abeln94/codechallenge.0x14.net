@@ -1,7 +1,7 @@
 > Toys in the Attic
-> ??? Jet: Humans are meant to work and sweat to earn a living. Those that try to get rich quick or live at the expense of others, all get divine retributions somewhere along the line. That's the lesson. Unfortunately we quickly forget the lessons we learned. And then we have to learn them all over again.
-> ??? Edward: Lesson lesson. If you see a stranger, follow him.
-> ??? Spike: So that's the story. and what was the real lesson? Don't leave things in the fridge.
+>    Jet: Humans are meant to work and sweat to earn a living. Those that try to get rich quick or live at the expense of others, all get divine retributions somewhere along the line. That's the lesson. Unfortunately we quickly forget the lessons we learned. And then we have to learn them all over again.
+>    Edward: Lesson lesson. If you see a stranger, follow him.
+>    Spike: So that's the story. and what was the real lesson? Don't leave things in the fridge.
 
 And that's it, you've finally made it this far, the secret of life is 42 and the secret of the game the sha256 of this message.
 
