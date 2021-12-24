@@ -39,8 +39,10 @@ fun main() {
  */
 fun firstTablet() {
     // decode and print
-    val result = decodeTablet("hidden_toy_story.png")
+    val result = decodeTablet("C20_hidden_toy_story.png")
     println(result.asBinary())
+
+    File("C20_hidden_toy_story_out.txt").writeText(result.asBinary())
 }
 
 /**
@@ -48,11 +50,11 @@ fun firstTablet() {
  */
 fun secondTablet() {
     // decode and print
-    val result = decodeTablet("9788b1d0ecc849920aae9aa182e8ce54088d3684f2af994d1525223f313318c6.png")
+    val result = decodeTablet("C20_9788b1d0ecc849920aae9aa182e8ce54088d3684f2af994d1525223f313318c6.png")
     println(result.asBinary())
 
     // then write the data into a file
-    File("output.zip").writeBytes(result.drop(20 * 8).take(274 * 8).asBytes())
+    File("C20_9788b1d0ecc849920aae9aa182e8ce54088d3684f2af994d1525223f313318c6_out.zip").writeBytes(result.drop(20 * 8).take(274 * 8).asBytes())
 }
 
 /**
@@ -60,7 +62,7 @@ fun secondTablet() {
  */
 fun thirdTablet() {
     // decode and print
-    val result = decodeTablet("056deccabd65794ad9f54c379c03912b2c81d60938a5e7c85086e45094e93a5c.png")
+    val result = decodeTablet("C20_056deccabd65794ad9f54c379c03912b2c81d60938a5e7c85086e45094e93a5c.png")
     println(result.asBinary())
 
     // then decode the LZW
@@ -68,7 +70,7 @@ fun thirdTablet() {
     println(final)
 
     // finally calculate the sha256 and write to file
-    File("output.txt").writeText(final.sha256())
+    File("C20_056deccabd65794ad9f54c379c03912b2c81d60938a5e7c85086e45094e93a5c_out.txt").writeText(final.sha256())
 }
 
 // ------------ algorithms ------------- //
