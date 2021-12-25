@@ -19,7 +19,6 @@ So, to recap:
 3) The result is the bigger polynomial that solves the problem
 
 Except there is one extra requirement: the polynomial must end in '1'.
-So, if the resulting polynomial ends in 0, it means it isn't valid. But in that case we just need to remove the extra leading zeros, because a polynomial still works when adding or subtracting zeros (if the length fits).
+So, if the resulting polynomial ends in 0, it means it isn't valid. But in that case we just need to remove the extra leading zeros, because a polynomial still works when adding or subtracting zeros (if the length fits). So
 
-so
 4) Remove all leading zeros of the output (in binary), and write it as hex.

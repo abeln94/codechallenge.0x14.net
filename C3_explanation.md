@@ -1,8 +1,9 @@
 # Challenge 3 - The night of the hunter
-- Contest: https://codechallenge.0x14.net/Challenges
+- Contest: https://codechallenge.0x14.net/Challenges?id=3
 - Author: Abel Naya
 
 ## Explanation
+This one requires a parser of different formats, and I had fun writing my own.
 1) Read the data, both strings and the letter values
 2) Parse the letter values. The divisions make the text not json nor other common formats valid. One solution could be to replace any `\d+/\d+` (two numbers separated by a slash) with the result, and then parse. My solution is more generic:
    1) If the string starts with '{', mark as (`1`,`","`,`":"`)
